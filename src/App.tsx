@@ -8,6 +8,7 @@ import { PriceChart, ProbChart, Spark } from './components/Charts'
 import { Card } from './components/Card'
 import AnalysisSection from './components/Analysis'
 import { CountUp, useReveal } from './lib/motion'
+import { Ticker } from './components/Ticker'
 
 const RidgeScene = lazy(() => import('./components/RidgeScene'))
 const EMBEDDED = analyse(parseCSV(csvRaw))
@@ -81,6 +82,13 @@ export default function App() {
   const vsSma = A.px[L] / A.sma[L] - 1
   const allDriversOpen = drivers.every(d => openDrivers[d.key])
 
+  // Ticker clicks: drivers open their card first, then everything scrolls into view.
+  const pick = (target: string) => {
+    const isDriver = A.drivers.some(d => d.key === target)
+    if (isDriver) setOpenDrivers(o => ({ ...o, [target]: true }))
+    requestAnimationFrame(() => document.getElementById(isDriver ? `drv-${target}` : target)?.scrollIntoView({ block: isDriver ? 'center' : 'start' }))
+  }
+
   const onFile = (f?: File) => {
     if (!f) return
     f.text().then(t => {
@@ -110,6 +118,7 @@ export default function App() {
           </div>
         </div>
         {error && <div className="error glass" role="alert">โหลดไฟล์ไม่สำเร็จ: {error}</div>}
+        <Ticker A={A} pBear={pBear} bear={bear} onPick={pick} />
       </header>
 
       <main id="main">
@@ -180,7 +189,7 @@ export default function App() {
               const fv = (v: number) => (d.type === 'pct' ? pct(v) : pp(v))
               const s = Math.min(Math.abs(d.corr60) / 0.6, 1)
               return (
-                <Card key={d.key} className="driver" eyebrow={th.cat} title={DRIVER_NAME_TH[d.key]}
+                <Card key={d.key} id={`drv-${d.key}`} className="driver" eyebrow={th.cat} title={DRIVER_NAME_TH[d.key]}
                   open={!!openDrivers[d.key]} onToggle={v => setOpenDrivers(o => ({ ...o, [d.key]: v }))}
                   summary={
                     <span className="driver-sum">

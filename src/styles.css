@@ -19,7 +19,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 96px; -webkit-text-size-adjust: 100%; }
+html { scroll-behavior: smooth; scroll-padding-top: 150px; -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--sky); color: var(--ink); font: 400 15.5px/1.7 var(--body); -webkit-font-smoothing: antialiased; }
 img { max-width: 100%; display: block; }
 a { color: inherit; }
@@ -388,4 +388,54 @@ main { padding-bottom: clamp(48px, 7vw, 88px); }
   .ridge-tag b { font-size: 10.5px; }
   .ridge-tag:not(.today) span { display: none; }
   .ridge-tag.main b { font-size: 11.5px; }
+}
+
+/* ================= Ticker tape (under the nav) ================= */
+.ticker { max-width: calc(var(--max) - 48px); margin: 8px auto 0; display: flex; align-items: stretch; border-radius: 999px; overflow: hidden; height: 40px; }
+.tick-head { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 14px 0 16px; font: 600 12px var(--body); color: var(--ink-2); white-space: nowrap;
+  border-right: 1px solid rgba(11,31,68,0.08); background: rgba(255,255,255,0.5); }
+.tick-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+.tick-viewport { flex: 1; min-width: 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
+.tick-track { display: flex; width: max-content; height: 100%; }
+.tick-strip { display: flex; align-items: center; list-style: none; margin: 0; padding: 0; }
+.tick-strip li { display: flex; align-items: center; height: 100%; }
+.tick-strip li::after { content: ''; width: 1px; height: 16px; background: rgba(11,31,68,0.1); }
+.tick-strip button { display: flex; align-items: center; gap: 8px; height: 100%; padding: 0 18px; background: none; border: 0; cursor: pointer; white-space: nowrap; font-size: 13px; color: var(--ink); transition: background .2s; }
+.tick-strip button:hover, .tick-strip button:focus-visible { background: rgba(255,255,255,0.7); }
+.tick-strip b { font: 700 12.5px var(--display); font-stretch: 108%; }
+.tick-ch { font-size: 12px; }
+.tick-spark { width: 46px; height: 16px; display: block; }
+.tick-spark .spark { width: 100%; height: 100%; }
+.tick-sig { font: 700 11.5px var(--body); color: #fff; padding: 2px 9px; border-radius: 999px; }
+.tick-sig.bear { background: var(--red); } .tick-sig.bull { background: var(--green); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .tick-track { animation: tick 46s linear infinite; }
+  .ticker:hover .tick-track, .ticker:focus-within .tick-track { animation-play-state: paused; }
+  .tick-dot { animation: ping 1.8s ease-out infinite; }
+  /* Bear/Bull headline glows like a warning light */
+  .signal-word { animation: glow 2.6s ease-in-out 1s infinite; }
+  .signal-word.bear { --glow: rgba(239,59,54,0.55); } .signal-word.bull { --glow: rgba(16,185,129,0.55); }
+}
+@media (prefers-reduced-motion: reduce) { .tick-viewport { overflow-x: auto; scrollbar-width: none; } }
+@keyframes tick { to { transform: translateX(-50%); } }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); } 80%, 100% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } }
+@keyframes glow { 0%, 100% { text-shadow: 0 0 0 transparent; } 50% { text-shadow: 0 0 22px var(--glow), 0 0 2px var(--glow); } }
+
+@media (max-width: 720px) {
+  .ticker { height: 34px; margin-top: 6px; }
+  .tick-head { padding: 0 10px; font-size: 11px; }
+  .tick-strip button { padding: 0 12px; font-size: 12px; gap: 6px; }
+  .tick-spark { display: none; }
+}
+
+/* Tablet: the gauge + test-result pair is too cramped side by side */
+@media (max-width: 900px) { .signal-layout { grid-template-columns: 1fr; } }
+/* Phone: once the hero is behind us, fold the ticker away so the sticky header stays slim */
+@media (max-width: 720px) {
+  .ticker { transition: height .35s ease, margin .35s ease, opacity .25s ease; }
+  .scrolled .ticker { height: 0; margin-top: 0; opacity: 0; pointer-events: none; }
+  .tick-head { gap: 6px; }
 }
