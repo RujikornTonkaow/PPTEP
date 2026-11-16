@@ -20,6 +20,9 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 150px; -webkit-text-size-adjust: 100%; }
+/* Never pan sideways: clip (not hidden) so the sticky header keeps working; hidden is the fallback for old Safari */
+html, body { max-width: 100%; overflow-x: hidden; overscroll-behavior-x: none; }
+@supports (overflow-x: clip) { html, body { overflow-x: clip; } }
 body { margin: 0; background: var(--sky); color: var(--ink); font: 400 15.5px/1.7 var(--body); -webkit-font-smoothing: antialiased; }
 img { max-width: 100%; display: block; }
 a { color: inherit; }
@@ -29,8 +32,8 @@ button, input { font: inherit; color: inherit; }
 .up { color: var(--green); } .down { color: var(--red); } .flat { color: var(--ink-2); }
 .small, .note { color: var(--ink-2); font-size: 13.5px; margin: 12px 0 0; }
 .eyebrow { display: block; margin: 0 0 4px; font: 600 11.5px/1.5 var(--body); letter-spacing: 0.06em; color: var(--blue); }
-.skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: #fff; padding: 8px 12px; border-radius: 10px; z-index: 100; }
-.skip:focus { left: 8px; }
+.skip { position: absolute; left: 8px; top: 8px; transform: translateY(-200%); background: var(--ink); color: #fff; padding: 8px 12px; border-radius: 10px; z-index: 100; }
+.skip:focus { transform: none; }
 
 /* ================= Backdrop: the offshore photo, lightly hazed ================= */
 .backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #cfe3f7; }
