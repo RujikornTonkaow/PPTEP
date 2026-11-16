@@ -64,7 +64,7 @@ button, input { font: inherit; color: inherit; }
 
 /* ================= Nav (floating pill) ================= */
 .nav { position: sticky; top: 12px; z-index: 50; padding: 0 var(--gutter); }
-.nav-inner { max-width: var(--max); margin: 12px auto 0; padding: 8px 10px 8px 12px; display: flex; align-items: center; gap: 18px; border-radius: 999px; }
+.nav-inner { max-width: calc(var(--max) - 48px); margin: 12px auto 0; padding: 8px 10px 8px 12px; display: flex; align-items: center; gap: 18px; border-radius: 999px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
 .logo-chip { background: #fff; border-radius: 999px; padding: 5px 12px; display: flex; flex-shrink: 0; box-shadow: 0 2px 8px rgba(14,52,110,0.12); }
 .logo-chip img { height: 22px; width: auto; }
@@ -112,7 +112,10 @@ button, input { font: inherit; color: inherit; }
 .lg-up { width: 6px; height: 14px; background: var(--green); }
 .lg-down { width: 6px; height: 14px; background: var(--red); }
 
-.radar-canvas { position: relative; height: clamp(380px, 46vw, 600px); }
+.radar-canvas { position: relative; height: clamp(380px, 46vw, 600px); min-width: 0; overflow: hidden; }
+/* The WebGL canvas carries an inline pixel width; never let it hold its container open after a resize */
+.radar-canvas > div, .radar-canvas canvas { max-width: 100%; }
+.hero-radar, .hero-copy, .radar-wrap { min-width: 0; }
 .radar-canvas canvas { touch-action: pan-y; cursor: grab; }
 .radar-canvas canvas:active { cursor: grabbing; }
 .radar-canvas.loading { display: grid; place-items: center; color: var(--ink-2); font-size: 14px; }
@@ -307,9 +310,9 @@ button, input { font: inherit; color: inherit; }
   .widget-grid { gap: 8px; }
 }
 @media (max-width: 1080px) {
-  .hero-inner { grid-template-columns: 1fr; }
+  .hero-inner { grid-template-columns: minmax(0, 1fr); }
   .driver-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .analysis { grid-template-columns: 1fr; }
+  .analysis { grid-template-columns: minmax(0, 1fr); }
   .analysis-index { position: static; }
   .analysis-index ol { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 8px; padding-bottom: 2px; }
   .analysis-index ol::-webkit-scrollbar { display: none; }
@@ -334,8 +337,8 @@ button, input { font: inherit; color: inherit; }
   .widget-grid dt, .widget-grid small { white-space: nowrap; }
   #price .card-summary { display: none; }
   #price .eyebrow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .driver-grid, .triad, .feature-grid, .gov-grid { grid-template-columns: 1fr; }
-  .signal-layout { grid-template-columns: 1fr; }
+  .driver-grid, .triad, .feature-grid, .gov-grid { grid-template-columns: minmax(0, 1fr); }
+  .signal-layout { grid-template-columns: minmax(0, 1fr); }
   .card-head { padding: 14px 12px 14px 16px; }
   .card-pad, .deliv .card-pad { padding: 0 16px 18px; }
   .card-title { font-size: 17px; }
@@ -435,7 +438,7 @@ main { padding-bottom: clamp(48px, 7vw, 88px); }
 }
 
 /* Tablet: the gauge + test-result pair is too cramped side by side */
-@media (max-width: 900px) { .signal-layout { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .signal-layout { grid-template-columns: minmax(0, 1fr); } }
 /* Phone: once the hero is behind us, fold the ticker away so the sticky header stays slim */
 @media (max-width: 720px) {
   .ticker { transition: height .35s ease, margin .35s ease, opacity .25s ease; }

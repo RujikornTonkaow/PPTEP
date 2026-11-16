@@ -136,7 +136,8 @@ function LabelProjector({ anchors, els }: { anchors: RefObject<(THREE.Object3D |
     pos.forEach((p, i) => {
       const el = els.current?.[i]; if (!p || !el) return
       // Ribbon labels are right-aligned to their anchor; never let them slide past the left edge.
-      const x = i < last ? Math.max(p.x, el.offsetWidth + 6) : p.x
+      const half = el.offsetWidth / 2
+      const x = i < last ? Math.max(p.x, el.offsetWidth + 6) : Math.min(Math.max(p.x, half + 6), size.width - half - 6)
       el.style.transform = `translate(${x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(var(--tx, -100%), var(--ty, -50%))`
     })
   })
