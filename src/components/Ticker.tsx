@@ -32,7 +32,7 @@ export function Ticker({ A, pBear, bear, onPick }: { A: Analysis; pBear: number;
       ))}
       <li>
         <button type="button" tabIndex={copy ? -1 : undefined} onClick={() => onPick('signal')}>
-          <b>สัญญาณ 5 วัน</b>
+          <b>สัญญาณ Dataiku</b>
           <span className="mono">P(Bear) {(pBear * 100).toFixed(1)}%</span>
           <span className={`tick-sig ${bear ? 'bear' : 'bull'}`}>{bear ? 'Bear' : 'Bull'}</span>
         </button>

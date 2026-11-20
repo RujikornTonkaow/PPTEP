@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import csvRaw from './data/PTTEP_all_Final_Full.csv?raw'
+import csvRaw from './data/PTTEP_all_Final_Full_scored.csv?raw'
+import testRaw from './data/Q2_LightGBM_test_predicted.csv?raw'
 import logo from './assets/pttep-logo.jpeg'
 import heroImg from './assets/pttep-hero.webp'
-import { analyse, evaluate, parseCSV, type Analysis } from './lib/analytics'
+import { analyse, DATAIKU_IMPORTANCE, evaluate, parseCSV, type Analysis } from './lib/analytics'
 import { C, fmt, pct, pp, thDate, tone } from './lib/format'
 import { PriceChart, ProbChart, Spark } from './components/Charts'
 import { Card } from './components/Card'
@@ -11,7 +12,9 @@ import { CountUp, useReveal } from './lib/motion'
 import { Ticker } from './components/Ticker'
 
 const RidgeScene = lazy(() => import('./components/RidgeScene'))
-const EMBEDDED = analyse(parseCSV(csvRaw))
+// Dates Dataiku held out as its test set (Q2 LightGBM → Predicted data).
+const TEST_DATES = new Set(testRaw.trim().split(/\r?\n/).slice(1).map(l => l.slice(0, 10)))
+const EMBEDDED = analyse(parseCSV(csvRaw), TEST_DATES)
 const RANGES = [{ l: '3M', d: 63 }, { l: '6M', d: 126 }, { l: '1Y', d: 252 }, { l: 'ทั้งหมด', d: 0 }]
 
 const DRIVER_TH: Record<string, { cat: string; why: string }> = {
@@ -26,8 +29,6 @@ const DRIVER_NAME_TH: Record<string, string> = {
   Brent_Close: 'น้ำมันดิบ Brent', SET_Index: 'ดัชนี SET', SP500_Close: 'S&P 500', FX_THB_per_USD: 'ค่าเงิน USD/THB',
   Thailand_10Y_Yield_Pct: 'พันธบัตรไทย 10 ปี', Thailand_1Y_Yield_Pct: 'พันธบัตรไทย 1 ปี',
 }
-const FEATURE_TH = ['โมเมนตัม PTTEP 20 วัน', 'ผลตอบแทน Brent 20 วัน', 'ผลตอบแทน SET 20 วัน', 'ผลตอบแทน S&P 500 20 วัน',
-  'การเปลี่ยนแปลง USD/THB 20 วัน', 'การเปลี่ยนแปลงพันธบัตร 10 ปี 20 วัน', 'การเปลี่ยนแปลงพันธบัตร 1 ปี 20 วัน']
 const UNIT_TH: Record<string, string> = { 'USD/bbl': 'ดอลลาร์/บาร์เรล', pts: 'จุด', THB: 'บาท', '%': '%' }
 
 function Gauge({ p, x }: { p: number; x: number }) {
@@ -52,7 +53,7 @@ function Gauge({ p, x }: { p: number; x: number }) {
 
 export default function App() {
   const [A, setA] = useState<Analysis>(EMBEDDED)
-  const [source, setSource] = useState('ข้อมูล WS3 (ฝังในไฟล์)')
+  const [source, setSource] = useState('ข้อมูล WS3 + ผล score จาก Dataiku (WS4)')
   const [error, setError] = useState('')
   const [range, setRange] = useState(252)
   const [threshold, setThreshold] = useState(0.45)
@@ -76,8 +77,7 @@ export default function App() {
   const bear = pBear >= threshold
   const ev = useMemo(() => evaluate(A.yTe, A.pTe, threshold), [A, threshold])
   const drivers = useMemo(() => [...A.drivers].sort((a, b) => Math.abs(b.corr60) - Math.abs(a.corr60)), [A])
-  const weights = useMemo(() => FEATURE_TH.map((name, j) => ({ name, w: A.w[j] })).sort((a, b) => Math.abs(b.w) - Math.abs(a.w)), [A])
-  const maxW = Math.max(...weights.map(w => Math.abs(w.w)))
+  const maxImp = DATAIKU_IMPORTANCE[0].pct
   const d1 = A.px[L] / A.px[L - 1] - 1
   const vsSma = A.px[L] / A.sma[L] - 1
   const allDriversOpen = drivers.every(d => openDrivers[d.key])
@@ -92,7 +92,7 @@ export default function App() {
   const onFile = (f?: File) => {
     if (!f) return
     f.text().then(t => {
-      try { setA(analyse(parseCSV(t))); setSource(f.name); setError('') }
+      try { setA(analyse(parseCSV(t), TEST_DATES)); setSource(f.name); setError('') }
       catch (e) { setError((e as Error).message) }
     })
   }
@@ -135,7 +135,7 @@ export default function App() {
               <p className="lede">6 ปัจจัยรายวัน กับ 1 สัญญาณตลาด แต่ละแถบคือเส้นทาง 120 วันทำการล่าสุด แถบหน้าสุดคือ PTTEP ระบายสีตาม Bull/Bear แถบยิ่งสีเข้ม ยิ่งขยับไปพร้อมกับ PTTEP มาก</p>
 
               <div className="widget">
-                <span className="label">สัญญาณจากโมเดล · อีก 5 วันทำการ</span>
+                <span className="label">สัญญาณจาก Dataiku · LightGBM</span>
                 <div className="signal-row">
                   <span className={`signal-word ${bear ? 'bear' : 'bull'}`}>{bear ? 'Bear' : 'Bull'}</span>
                   <span className="mono signal-p">P(Bear) <CountUp value={pBear * 100} delay={350} format={v => `${v.toFixed(1)}%`} /></span>
@@ -216,7 +216,7 @@ export default function App() {
 
         <section className="section" id="signal">
           <div className="section-head">
-            <div><p className="eyebrow">Logistic model · ทำนาย regime ล่วงหน้า 5 วันทำการ</p><h2>สัญญาณ Regime</h2></div>
+            <div><p className="eyebrow">Dataiku · LightGBM · P(Bear) จาก score recipe</p><h2>สัญญาณ Regime</h2></div>
           </div>
           <div className="signal-layout">
             <Card className="signal-card" eyebrow="P(Bear) ล่าสุด" title="มาตรวัดสัญญาณ"
@@ -235,7 +235,7 @@ export default function App() {
               </div>
             </Card>
 
-            <Card eyebrow={`ช่วงทดสอบ · ${thDate(A.rows[A.te[0]].Date)} – ${thDate(A.rows[A.te[A.te.length - 1]].Date)} · ${A.te.length} วัน`}
+            <Card eyebrow={`ชุดทดสอบของ Dataiku · สุ่ม ${A.te.length} วัน · ${thDate(A.rows[A.te[0]].Date)} – ${thDate(A.rows[A.te[A.te.length - 1]].Date)}`}
               title="ผลทดสอบกับข้อมูลที่โมเดลไม่เคยเห็น" summary={<span className="mono pill">AUC {A.aucTest.toFixed(3)}</span>}>
               <div className="cm">
                 <span /><span className="cm-h">ทำนาย Bear</span><span className="cm-h">ทำนาย Bull</span>
@@ -248,27 +248,26 @@ export default function App() {
                 <div><dt>Recall</dt><dd className="mono">{ev.rec.toFixed(3)}</dd></div>
                 <div><dt>Precision</dt><dd className="mono">{ev.prec.toFixed(3)}</dd></div>
               </dl>
-              <p className="small">Accuracy {(ev.acc * 100).toFixed(1)}% · สัดส่วน Bear ในช่วงทดสอบ {(A.bearRateTest * 100).toFixed(0)}% · AUC ช่วงเรียนรู้ {A.aucTrain.toFixed(3)}</p>
+              <p className="small">Accuracy {(ev.acc * 100).toFixed(1)}% · สัดส่วน Bear ในชุดทดสอบ {(A.bearRateTest * 100).toFixed(0)}% · AUC ชุด train {A.aucTrain.toFixed(3)}</p>
             </Card>
 
             <Card className="wide" eyebrow="P(Bear) ตามเวลา เทียบกับเกณฑ์" title="ประวัติสัญญาณ">
               <ProbChart A={A} threshold={threshold} />
               <div className="chart-key">
-                <span><i style={{ background: C.muted }} />ช่วงเรียนรู้</span><span><i style={{ background: C.red }} />ช่วงทดสอบ</span>
+                <span><i style={{ background: C.muted }} />ทุกวัน (score จาก Dataiku)</span><span><i style={{ background: C.red }} />วันที่ Dataiku ใช้ test</span>
                 <span><i className="dash" style={{ borderColor: C.amber }} />เกณฑ์ x</span>
               </div>
             </Card>
 
-            <Card className="wide" eyebrow="การเปลี่ยนแปลง 20 วันที่ปรับมาตรฐานแล้ว" title="น้ำหนักของโมเดล" defaultOpen={false}
-              summary={<span className="pill">7 ตัวแปร</span>}>
-              <p className="small" style={{ marginTop: 0 }}>แท่งไปทางขวา = ดันไปทาง Bear · ไปทางซ้าย = ดันไปทาง Bull</p>
-              <div className="weights">
-                {weights.map(w => (
-                  <div className="w-row" key={w.name}>
-                    <span>{w.name}</span>
-                    <div className="w-track"><i className={w.w > 0 ? 'pos' : 'neg'}
-                      style={{ width: `${(Math.abs(w.w) / maxW) * 50}%`, [w.w > 0 ? 'left' : 'right']: '50%' }} /></div>
-                    <b className={`mono ${w.w > 0 ? 'down' : 'up'}`}>{w.w >= 0 ? '+' : '−'}{Math.abs(w.w).toFixed(3)}</b>
+            <Card className="wide" eyebrow="Feature importance (Shapley) จาก Dataiku" title="ปัจจัยที่โมเดลใช้" defaultOpen={false}
+              summary={<span className="pill">{DATAIKU_IMPORTANCE.length} ตัวแปร</span>}>
+              <p className="small" style={{ marginTop: 0 }}>ค่าเฉลี่ยของ |Shapley| บนชุดทดสอบ ตามที่ Dataiku รายงาน</p>
+              <div className="weights imp">
+                {DATAIKU_IMPORTANCE.map(f => (
+                  <div className="w-row" key={f.key}>
+                    <span>{f.name}</span>
+                    <div className="w-track"><i className="pos" style={{ width: `${(f.pct / maxImp) * 100}%`, left: 0 }} /></div>
+                    <b className="mono">{f.pct}%</b>
                   </div>
                 ))}
               </div>

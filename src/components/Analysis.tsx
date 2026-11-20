@@ -24,7 +24,7 @@ const ITEMS: { id: string; n: number; t: string; sub: string; body: ReactNode }[
         <tbody>
           <tr><td>Brent ขึ้น</td><td>ราคาขายน้ำมันสูงขึ้น ราคาก๊าซบางส่วนผูกกับน้ำมันแบบมีการหน่วงเวลา</td><td>รายได้และอัตรากำไร EBITDA เพิ่ม ประมาณการ EPS ถูกปรับขึ้น และ EV/EBITDA สูงขึ้น beta รายวันต่อ Brent ≈ 0.20</td></tr>
           <tr><td>USD/THB ขึ้น (บาทอ่อน)</td><td>รายได้ดอลลาร์แปลงเป็นบาทได้มากขึ้น</td><td>กำไรในรูปบาทและความสามารถจ่ายปันผลเพิ่ม ผลรายวันแทบเป็นศูนย์ ส่วนใหญ่เห็นผลตอนประกาศงบรายไตรมาส</td></tr>
-          <tr><td>ผลตอบแทนพันธบัตรไทยขึ้น</td><td>อัตราไร้ความเสี่ยงสูงขึ้น ทำให้ต้นทุนส่วนผู้ถือหุ้นและ WACC สูงขึ้น</td><td>มูลค่าจาก DCF ลดลงและ P/E ถูกกดดัน การเปลี่ยนแปลง 20 วันของพันธบัตร 10 ปีมีน้ำหนักมากเป็นอันดับ 2 ในโมเดล</td></tr>
+          <tr><td>ผลตอบแทนพันธบัตรไทยขึ้น</td><td>อัตราไร้ความเสี่ยงสูงขึ้น ทำให้ต้นทุนส่วนผู้ถือหุ้นและ WACC สูงขึ้น</td><td>มูลค่าจาก DCF ลดลงและ P/E ถูกกดดัน ในโมเดล Dataiku พันธบัตร 1 ปีและ 10 ปีมีความสำคัญ 12% และ 11%</td></tr>
           <tr><td>SET Index ขึ้น</td><td>ความต้องการรับความเสี่ยงของตลาดและเงินทุนต่างชาติ</td><td>beta ต่อ SET ≈ 0.52 เป็นส่วนระดับตลาดที่อธิบายการขยับรายวันของ PTTEP ได้มากที่สุด</td></tr>
           <tr><td>S&amp;P 500 ขึ้น</td><td>อารมณ์ตลาดโลก (risk-on/risk-off)</td><td>ผลในวันเดียวกันน้อย (ρ ≈ 0.01) เพราะเวลาตลาดต่างกัน มีผลมากช่วงตลาดโลกเทขาย</td></tr>
           <tr><td>ความผันผวนสูงขึ้น</td><td>ราคาแกว่งกว้างขึ้น และ implied volatility สูงขึ้น</td><td>ส่วนชดเชยความเสี่ยงและ VaR สูงขึ้น ต้องลดขนาดการลงทุน ความผันผวน 20 วันล่าสุด 38% เทียบค่าเฉลี่ย 27%</td></tr>
@@ -40,7 +40,7 @@ const ITEMS: { id: string; n: number; t: string; sub: string; body: ReactNode }[
           <div><h4>เศรษฐกิจมหภาค</h4><ul><li><code>FX_THB_per_USD</code> แปลงรายได้ดอลลาร์เป็นบาท</li><li><code>Thailand_10Y_Yield_Pct</code> ต้นทุนเงินทุนระยะยาว</li><li><code>Thailand_1Y_Yield_Pct</code> การคาดการณ์ดอกเบี้ยนโยบาย</li></ul></div>
           <div><h4>เฉพาะอุตสาหกรรม</h4><ul><li><code>Brent_Close</code> ปัจจัยหลักที่กำหนดรายได้ธุรกิจต้นน้ำ</li></ul></div>
           <div><h4>อารมณ์ตลาด</h4><ul><li><code>SET_Index</code> ความต้องการรับความเสี่ยงของตลาดไทย</li><li><code>SP500_Close</code> อารมณ์ตลาดโลก</li></ul></div>
-          <div><h4>โมเมนตัมทางเทคนิค</h4><ul><li>SMA 50 วันของ <code>PTTEP_Close</code> ใช้กำหนด label</li><li>ผลตอบแทน 20 วันของ <code>PTTEP_Close</code> ตัวแปรที่แรงที่สุดในโมเดล</li></ul></div>
+          <div><h4>โมเมนตัมทางเทคนิค</h4><ul><li>SMA 50 วันของ <code>PTTEP_Close</code> ใช้กำหนด label</li><li><code>PTTEP_Close</code> ราคาปิด เป็นตัวแปรที่สำคัญที่สุดในโมเดล Dataiku (28%)</li></ul></div>
         </div>
         <p>correlation ของผลตอบแทนรายวันกับ PTTEP คือ Brent 0.30 และ SET 0.28 ส่วนค่าเงินบาทและ S&amp;P 500 ใกล้ 0 ถ้าดูที่ระดับราคาจะดูสัมพันธ์กันมากกว่า (0.82 กับพันธบัตร 10 ปี) แต่ส่วนใหญ่เกิดจากแนวโน้มร่วมกัน ทุกส่วนของหน้านี้จึงใช้ <em>การเปลี่ยนแปลง</em> ไม่ใช่ระดับราคา</p>
       </>
@@ -69,22 +69,22 @@ const ITEMS: { id: string; n: number; t: string; sub: string; body: ReactNode }[
           <div><span className="step">ขั้นที่ 1 · Label</span>
             <div className="formula">SMA<sub>50,t</sub> = (1/50) · Σ<sub>i=0..49</sub> P<sub>t−i</sub><br />Regime<sub>t</sub> = Bull ถ้า P<sub>t</sub> ≥ SMA<sub>50,t</sub> ไม่เช่นนั้นเป็น Bear</div></div>
           <div><span className="step">ขั้นที่ 2 · ทำนายความน่าจะเป็น</span>
-            <div className="formula">P(Bear<sub>t+5</sub> | x<sub>t</sub>) = σ(β<sub>0</sub> + Σ<sub>k</sub> β<sub>k</sub> z<sub>k,t</sub>), σ(u) = 1 / (1 + e<sup>−u</sup>)</div>
-            <p className="small">z<sub>k,t</sub> คือการเปลี่ยนแปลง 20 วันของ PTTEP, Brent, SET, S&amp;P 500, USD/THB, พันธบัตร 10 ปีและ 1 ปี ปรับมาตรฐานด้วยค่าจากช่วงเรียนรู้ ใช้ logistic regression แบบ L2 (λ = 0.01)</p></div>
+            <div className="formula">P(Bear<sub>t</sub> | x<sub>t</sub>) = LightGBM(x<sub>t</sub>)</div>
+            <p className="small">ทำใน Dataiku (WS4 Q2): LightGBM แบบ gbdt 27 ต้นไม้, 31 leaves, learning rate 0.2 ชนะ 7 โมเดลที่เทียบ x<sub>t</sub> คือ 10 คอลัมน์ของวันเดียวกันจากไฟล์ WS3 ได้แก่ ราคาปิด PTTEP, Brent, SET, S&amp;P 500, USD/THB, THB/USD, พันธบัตร 10 ปีและ 1 ปี และธงเติมข้อมูลพันธบัตร 2 คอลัมน์ ค่า P(Bear) บนหน้านี้มาจาก score recipe ของ Dataiku</p></div>
           <div><span className="step">ขั้นที่ 3 · ตัดสินใจ</span>
-            <div className="formula">Signal<sub>t</sub> = Bear ถ้า P(Bear<sub>t+5</sub>) ≥ x ไม่เช่นนั้นเป็น Bull โดย x = 0.45</div></div>
+            <div className="formula">Signal<sub>t</sub> = Bear ถ้า P(Bear<sub>t</sub>) ≥ x ไม่เช่นนั้นเป็น Bull โดย x = 0.45</div></div>
         </div>
-        <p>ทดสอบกับข้อมูลที่โมเดลไม่เคยเห็น ก.ย. 2025 – พ.ย. 2026 (262 วัน) ได้ ROC-AUC = <b>0.766</b></p>
+        <p>Dataiku แบ่งข้อมูลแบบสุ่มเป็น train 1,107 วัน และ test 258 วัน ผลบนชุด test ได้ ROC-AUC = <b>0.998</b></p>
         <div className="tbl"><table className="num">
           <thead><tr><th>เกณฑ์ x</th><th>Recall (Bear)</th><th>Precision</th><th>F1</th><th>Accuracy</th></tr></thead>
           <tbody>
-            <tr><td>0.40</td><td>0.687</td><td>0.557</td><td>0.615</td><td>0.676</td></tr>
-            <tr className="hl"><td>0.45 · ที่เลือก</td><td>0.646</td><td>0.561</td><td>0.601</td><td>0.676</td></tr>
-            <tr><td>0.50</td><td>0.586</td><td>0.563</td><td>0.574</td><td>0.672</td></tr>
-            <tr><td>0.55</td><td>0.505</td><td>0.610</td><td>0.552</td><td>0.691</td></tr>
+            <tr><td>0.40</td><td>0.983</td><td>0.944</td><td>0.964</td><td>0.965</td></tr>
+            <tr className="hl"><td>0.45 · ที่เลือก</td><td>0.983</td><td>0.960</td><td>0.971</td><td>0.973</td></tr>
+            <tr><td>0.50</td><td>0.983</td><td>0.960</td><td>0.971</td><td>0.973</td></tr>
+            <tr><td>0.55</td><td>0.967</td><td>0.975</td><td>0.971</td><td>0.973</td></tr>
           </tbody>
         </table></div>
-        <p><b>ทำไมเลือก 0.45:</b> สำหรับคนที่ถือหุ้นอยู่ การพลาดขาลงหมายถึงต้องทนถือขณะราคาลง ซึ่งเคยลงลึกถึง −51% ส่วนการเตือนผิดเสียแค่โอกาสกำไรบางส่วนจากการลดสัดส่วนชั่วคราว เกณฑ์ต่ำกว่า 0.5 จึงจับขาลงได้มากขึ้น (recall 0.646 เทียบกับ 0.586) โดย accuracy แทบไม่ลด ถ้าลดเหลือ 0.40 จะเตือนผิดบ่อยขึ้นและเสียค่าธรรมเนียมซื้อขายเพิ่ม ลองเลื่อนแถบเกณฑ์ในส่วนสัญญาณเพื่อดูผลได้</p>
+        <p><b>ทำไมเลือก 0.45:</b> สำหรับคนที่ถือหุ้นอยู่ การพลาดขาลงหมายถึงต้องทนถือขณะราคาลง ซึ่งเคยลงลึกถึง −51% ส่วนการเตือนผิดเสียแค่โอกาสกำไรบางส่วนจากการลดสัดส่วนชั่วคราว ที่เกณฑ์ 0.45 โมเดล Dataiku พลาดขาลง 2 ครั้งและเตือนผิด 5 ครั้งจาก 258 วัน ถ้าลดเหลือ 0.40 จะเตือนผิดเพิ่มเป็น 7 ครั้งโดยจับขาลงได้ไม่เพิ่ม ถ้าเพิ่มเป็น 0.55 จะพลาดขาลงเพิ่มเป็น 4 ครั้ง ลองเลื่อนแถบเกณฑ์ในส่วนสัญญาณเพื่อดูผลได้</p>
       </>
     ),
   },
@@ -93,17 +93,17 @@ const ITEMS: { id: string; n: number; t: string; sub: string; body: ReactNode }[
     body: (
       <div className="gov-grid">
         <div><h4>ความเสี่ยงของโมเดล</h4><ul>
-          <li><b>Look-ahead bias:</b> ข้อมูลนำเข้าใช้ถึงวันที่ t เท่านั้น ส่วน target คือ regime วันที่ t+5 และระบุไว้ว่าตลาดสหรัฐปิดหลังตลาดไทย</li>
-          <li><b>Data leakage:</b> แบ่งข้อมูลตามเวลา 80/20 ไม่สุ่ม และค่าปรับมาตรฐานมาจากช่วงเรียนรู้เท่านั้น</li>
-          <li><b>Overfitting:</b> ใช้ 7 ตัวแปรกับ L2 และเปิดเผย AUC ช่วงเรียนรู้ 0.859 เทียบช่วงทดสอบ 0.766</li>
-          <li><b>Label ช่วงต้น:</b> 49 แถวแรกยังไม่มี SMA50 และถูกตั้งเป็น Bear อัตโนมัติ จึงตัดออก</li>
+          <li><b>Look-ahead bias:</b> โมเดล Dataiku ใช้ข้อมูลวันที่ t ทายสภาวะของวันที่ t เอง จึงเป็นการจำแนกสภาวะปัจจุบัน ไม่ใช่การทายล่วงหน้า และตลาดสหรัฐปิดหลังตลาดไทย ค่า S&amp;P 500 ของวันเดียวกันจึงยังไม่มีตอนตลาดไทยปิด</li>
+          <li><b>Data leakage:</b> label Bull/Bear คำนวณจาก <code>PTTEP_Close</code> เทียบ SMA50 และ Dataiku ใช้ <code>PTTEP_Close</code> เป็น input ด้วย (สำคัญที่สุด 28%) อีกทั้งแบ่ง train/test แบบสุ่ม วันติดกันจึงอยู่ทั้งสองฝั่ง ROC-AUC 0.998 จึงสูงเกินกว่าที่จะได้เมื่อใช้งานจริง</li>
+          <li><b>Overfitting:</b> เปิดเผย AUC ชุด train 1.000 เทียบชุด test 0.998 จาก Dataiku ค่าที่เท่ากันเกือบทั้งหมดเกิดจาก leakage ข้างต้น ไม่ได้แปลว่าโมเดลทั่วไปดี</li>
+          <li><b>Label ช่วงต้น:</b> 49 แถวแรกยังไม่มี SMA50 และถูกตั้งเป็น Bear อัตโนมัติ แถวเหล่านี้ยังอยู่ในข้อมูลที่ Dataiku ใช้</li>
           <li><b>การเติมข้อมูล:</b> ผลตอบแทนพันธบัตรที่ถูก interpolate มีคอลัมน์ <code>*_Imputed</code> บอกไว้</li>
           <li><b>ความสัมพันธ์เปลี่ยนไป:</b> correlation เปลี่ยนตามเวลา (ดูได้จาก radar) ต้องเทรนใหม่เป็นระยะ และเลิกใช้ถ้า AUC ช่วงทดสอบลดใกล้ 0.5</li>
         </ul></div>
         <div><h4>ความโปร่งใสและจริยธรรม</h4><ul>
           <li>แสดงข้อความ "ไม่ใช่คำแนะนำการลงทุน" บนหน้าจอ</li>
           <li>แสดงแหล่งข้อมูล วิธีอัปเดต และข้อจำกัด</li>
-          <li>เปิดเผยน้ำหนักของโมเดลและผลทดสอบ ไม่ให้เป็น black box</li>
+          <li>เปิดเผย feature importance และผลทดสอบจาก Dataiku ไม่ให้เป็น black box</li>
           <li>ผู้ใช้กำหนดเกณฑ์เองและเห็นผลทันที คนเป็นผู้ตัดสินใจขั้นสุดท้าย</li>
           <li>ระบุว่า correlation คือการขยับร่วมกัน ไม่ใช่เหตุและผล</li>
           <li>ไม่เก็บข้อมูลส่วนบุคคล ใช้เฉพาะข้อมูลตลาดสาธารณะ</li>
@@ -133,7 +133,7 @@ export default function AnalysisSection() {
         <button type="button" className="btn-ghost" onClick={() =>
           setOpen(allOpen ? {} : Object.fromEntries(ITEMS.map(i => [i.id, true])))}>
           {allOpen ? 'ปิดทุกข้อ' : 'เปิดทุกข้อ'}</button>
-        <p className="asof">ตัวเลขในส่วนนี้มาจากข้อมูล WS3 ที่ฝังในหน้า (4 ม.ค. 2021 – 10 พ.ย. 2026, 1,365 วันทำการ) ถ้าโหลด CSV อื่น dashboard ด้านบนจะเปลี่ยน แต่ข้อความส่วนนี้ไม่เปลี่ยน</p>
+        <p className="asof">ตัวเลขในส่วนนี้มาจากข้อมูล WS3 (4 ม.ค. 2021 – 10 พ.ย. 2026, 1,365 วันทำการ) และผลโมเดลจาก Dataiku (WS4) ถ้าโหลด CSV อื่น dashboard ด้านบนจะเปลี่ยน แต่ข้อความส่วนนี้ไม่เปลี่ยน</p>
       </nav>
       <div className="analysis-body">
         {ITEMS.map(i => (

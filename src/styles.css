@@ -228,6 +228,7 @@ button, input { font: inherit; color: inherit; }
 .w-track::after { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; background: var(--ink-2); opacity: 0.5; }
 .w-track i { position: absolute; top: 0; bottom: 0; border-radius: 5px; }
 .w-track i.pos { background: var(--red); } .w-track i.neg { background: var(--green); }
+.imp .w-track::after { display: none; } .imp .w-track i.pos { background: var(--blue); }
 
 /* ================= Analysis ================= */
 .analysis { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 20px; align-items: start; }

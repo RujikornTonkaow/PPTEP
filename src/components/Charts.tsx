@@ -67,39 +67,19 @@ export function PriceChart({ A, range }: { A: Analysis; range: number }) {
 
 export function ProbChart({ A, threshold }: { A: Analysis; threshold: number }) {
   const ref = useUPlot((width, height) => {
-    const x = A.rows.map(r => ts(r.Date)), cut = A.te[0]
+    const x = A.rows.map(r => ts(r.Date))
     const nul = (v: number) => (Number.isFinite(v) ? v : null)
-    const testShade: uPlot.Plugin = {
-      hooks: {
-        drawClear: [u => {
-          const x0 = u.valToPos(x[cut], 'x', true)
-          u.ctx.fillStyle = 'rgba(239,59,54,0.07)'
-          u.ctx.fillRect(x0, u.bbox.top, u.bbox.left + u.bbox.width - x0, u.bbox.height)
-          const dpr = devicePixelRatio, label = 'ช่วงทดสอบ →'
-          u.ctx.fillStyle = C.muted
-          u.ctx.font = `600 ${12 * dpr}px "IBM Plex Sans Thai", sans-serif`
-          // When the test band is too narrow for the label, put it just left of the band instead.
-          const fits = u.bbox.left + u.bbox.width - x0 > u.ctx.measureText(label).width + 16 * dpr
-          const tw = u.ctx.measureText(label).width, ty = u.bbox.top + 16 * dpr
-          const tx = fits ? x0 + 8 * dpr : x0 - 6 * dpr - tw
-          u.ctx.fillStyle = 'rgba(255,255,255,0.85)'
-          u.ctx.beginPath(); u.ctx.roundRect(tx - 6 * dpr, ty - 13 * dpr, tw + 12 * dpr, 19 * dpr, 6 * dpr); u.ctx.fill()
-          u.ctx.fillStyle = C.muted
-          u.ctx.fillText(label, tx, ty)
-          u.ctx.textAlign = 'left'
-        }],
-      },
-    }
+    const isTest = new Set(A.te)
     return {
-      data: [x, A.prob.map((v, i) => (i < cut ? nul(v) : null)), A.prob.map((v, i) => (i >= cut - 1 ? nul(v) : null)),
+      data: [x, A.prob.map(nul), A.prob.map((v, i) => (isTest.has(i) ? nul(v) : null)),
         x.map(() => threshold)] as uPlot.AlignedData,
       opts: {
-        width, height, plugins: [testShade], legend: { show: false }, cursor: { y: false },
+        width, height, legend: { show: false }, cursor: { y: false },
         scales: { x: { time: true }, y: { range: [0, 1] } },
         axes: [axis(), axis({ side: 1, size: 48, values: (_u, v) => v.map(n => `${Math.round(n * 100)}%`) })],
         series: [{},
-          { label: 'In-sample', stroke: 'rgba(74,97,133,0.55)', width: 1.1 },
-          { label: 'Out-of-sample', stroke: C.red, width: 1.6 },
+          { label: 'All days', stroke: 'rgba(74,97,133,0.55)', width: 1.1 },
+          { label: 'Dataiku test rows', stroke: C.red, width: 0, paths: () => null, points: { show: true, size: 5, fill: C.red } },
           { label: 'Threshold', stroke: C.amber, width: 1.8, dash: [7, 5] }],
       },
     }

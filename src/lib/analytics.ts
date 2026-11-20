@@ -1,5 +1,6 @@
-// Core analytics: parsing, driver statistics and the Bull/Bear logistic model.
-// Logic mirrors the verified v1 dashboard (results match the Python prototype).
+// Core analytics: parsing, driver statistics, and the Bull/Bear model results from Dataiku (WS4).
+// The model is not run here: P(Bear) comes from the Dataiku LightGBM score recipe (proba_Bear),
+// and the test set is the 258 rows Dataiku held out (Q2_LightGBM_test_predicted.csv).
 
 export type Regime = 'Bull' | 'Bear'
 export interface Row {
@@ -12,8 +13,9 @@ export interface Row {
   Thailand_10Y_Yield_Pct: number
   Thailand_1Y_Yield_Pct: number
   Regime: Regime
+  pBear: number
 }
-type NumKey = Exclude<keyof Row, 'Date' | 'Regime'>
+type NumKey = Exclude<keyof Row, 'Date' | 'Regime' | 'pBear'>
 type ChangeType = 'pct' | 'diff'
 
 export interface DriverDef { key: NumKey; name: string; short: string; cat: string; type: ChangeType; unit: string }
@@ -22,7 +24,7 @@ export interface DriverStat extends DriverDef {
 }
 
 const REQ = ['Date', 'PTTEP_Close', 'Brent_Close', 'SET_Index', 'SP500_Close', 'FX_THB_per_USD',
-  'Thailand_10Y_Yield_Pct', 'Thailand_1Y_Yield_Pct', 'PTTEP_Classification'] as const
+  'Thailand_10Y_Yield_Pct', 'Thailand_1Y_Yield_Pct', 'PTTEP_Classification', 'proba_Bear'] as const
 const NUM: NumKey[] = ['PTTEP_Close', 'Brent_Close', 'SET_Index', 'SP500_Close', 'FX_THB_per_USD',
   'Thailand_10Y_Yield_Pct', 'Thailand_1Y_Yield_Pct']
 
@@ -34,22 +36,27 @@ export const DRIVERS: DriverDef[] = [
   { key: 'Thailand_10Y_Yield_Pct', name: 'Thai 10Y yield', short: 'TH 10Y', cat: 'Macro', type: 'diff', unit: '%' },
   { key: 'Thailand_1Y_Yield_Pct', name: 'Thai 1Y yield', short: 'TH 1Y', cat: 'Macro', type: 'diff', unit: '%' },
 ]
-export const FEATURES: { key: NumKey; name: string; type: ChangeType }[] = [
-  { key: 'PTTEP_Close', name: 'PTTEP 20D momentum', type: 'pct' },
-  { key: 'Brent_Close', name: 'Brent 20D return', type: 'pct' },
-  { key: 'SET_Index', name: 'SET 20D return', type: 'pct' },
-  { key: 'SP500_Close', name: 'S&P 500 20D return', type: 'pct' },
-  { key: 'FX_THB_per_USD', name: 'USD/THB 20D change', type: 'pct' },
-  { key: 'Thailand_10Y_Yield_Pct', name: 'Thai 10Y 20D change', type: 'diff' },
-  { key: 'Thailand_1Y_Yield_Pct', name: 'Thai 1Y 20D change', type: 'diff' },
+export const LOOKBACK = 20, WIN = 60, SMA = 50
+
+// Q2 LightGBM feature importance (Shapley) as shown in Dataiku: Report → Feature importance.
+export const DATAIKU_IMPORTANCE: { key: string; name: string; pct: number }[] = [
+  { key: 'PTTEP_Close', name: 'ราคาปิด PTTEP', pct: 28 },
+  { key: 'Brent_Close', name: 'น้ำมันดิบ Brent', pct: 19 },
+  { key: 'Thailand_1Y_Yield_Pct', name: 'พันธบัตรไทย 1 ปี', pct: 12 },
+  { key: 'Thailand_10Y_Yield_Pct', name: 'พันธบัตรไทย 10 ปี', pct: 11 },
+  { key: 'SP500_Close', name: 'S&P 500', pct: 9 },
+  { key: 'THBUSD_Close', name: 'THB/USD', pct: 8 },
+  { key: 'SET_Index', name: 'ดัชนี SET', pct: 7 },
+  { key: 'FX_THB_per_USD', name: 'USD/THB', pct: 5 },
+  { key: 'Thailand_1Y_Yield_Pct_Imputed', name: 'ธงเติมข้อมูลพันธบัตร 1 ปี', pct: 1 },
+  { key: 'Thailand_10Y_Yield_Pct_Imputed', name: 'ธงเติมข้อมูลพันธบัตร 10 ปี', pct: 0 },
 ]
-export const HORIZON = 5, LOOKBACK = 20, WIN = 60, SMA = 50, TRAIN_FRAC = 0.8
 
 export function parseCSV(text: string): Row[] {
   const lines = text.replace(/^﻿/, '').trim().split(/\r?\n/)
   const head = lines[0].split(',').map(s => s.trim())
   const miss = REQ.filter(c => !head.includes(c))
-  if (miss.length) throw new Error(`ไฟล์ขาดคอลัมน์: ${miss.join(', ')} ให้ใช้ไฟล์ CSV ที่ได้จาก notebook WS3`)
+  if (miss.length) throw new Error(`ไฟล์ขาดคอลัมน์: ${miss.join(', ')} ให้ใช้ไฟล์ CSV ที่ score จาก Dataiku (มีคอลัมน์ proba_Bear)`)
   const ix: Record<string, number> = Object.fromEntries(head.map((h, i) => [h, i]))
   const rows: Row[] = []
   for (let k = 1; k < lines.length; k++) {
@@ -57,13 +64,13 @@ export function parseCSV(text: string): Row[] {
     if (f.length < head.length) continue
     const reg = f[ix.PTTEP_Classification].trim()
     if (reg !== 'Bull' && reg !== 'Bear') continue
-    const r = { Date: f[ix.Date].trim().slice(0, 10), Regime: reg } as Row
-    let ok = true
+    const r = { Date: f[ix.Date].trim().slice(0, 10), Regime: reg, pBear: parseFloat(f[ix.proba_Bear]) } as Row
+    let ok = Number.isFinite(r.pBear)
     for (const c of NUM) { r[c] = parseFloat(f[ix[c]]); if (!Number.isFinite(r[c])) ok = false }
     if (ok) rows.push(r)
   }
   rows.sort((a, b) => (a.Date < b.Date ? -1 : a.Date > b.Date ? 1 : 0))
-  if (rows.length < SMA + HORIZON + 30) throw new Error(`มีข้อมูลที่ใช้ได้เพียง ${rows.length} แถว ต้องมีอย่างน้อย ${SMA + HORIZON + 30} แถว`)
+  if (rows.length < SMA + 30) throw new Error(`มีข้อมูลที่ใช้ได้เพียง ${rows.length} แถว ต้องมีอย่างน้อย ${SMA + 30} แถว`)
   return rows
 }
 
@@ -74,7 +81,6 @@ const mean = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length
 const std = (a: number[]) => { const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) ** 2, 0) / (a.length - 1)) }
 const cov = (a: number[], b: number[]) => { const ma = mean(a), mb = mean(b); let s = 0; for (let i = 0; i < a.length; i++) s += (a[i] - ma) * (b[i] - mb); return s / (a.length - 1) }
 const corr = (a: number[], b: number[]) => cov(a, b) / (std(a) * std(b))
-const sigmoid = (z: number) => 1 / (1 + Math.exp(-z))
 
 function auc(y: number[], p: number[]) {
   const idx = p.map((_, i) => i).sort((a, b) => p[a] - p[b])
@@ -85,11 +91,12 @@ function auc(y: number[], p: number[]) {
 
 export interface Analysis {
   rows: Row[]; n: number; px: number[]; sma: number[]; pRet: number[]; drivers: DriverStat[]
-  prob: number[]; w: number[]; b: number; tr: number[]; te: number[]; yTe: number[]; pTe: number[]
+  prob: number[]; tr: number[]; te: number[]; yTe: number[]; pTe: number[]
   aucTest: number; aucTrain: number; bearRateTest: number; vol20: number; volAll: number; maxDD: number
 }
 
-export function analyse(rows: Row[]): Analysis {
+/** testDates: the rows Dataiku held out as its test set. */
+export function analyse(rows: Row[], testDates: Set<string>): Analysis {
   const n = rows.length, last = n - 1
   const px = col(rows, 'PTTEP_Close')
   const sma = px.map((_, i) => (i < SMA - 1 ? NaN : mean(px.slice(i - SMA + 1, i + 1))))
@@ -105,37 +112,17 @@ export function analyse(rows: Row[]): Analysis {
       spark: a.slice(n - WIN) }
   })
 
-  const fcols = FEATURES.map(f => col(rows, f.key))
-  const X = rows.map((_, i) => FEATURES.map((f, j) => change(fcols[j], i, LOOKBACK, f.type)))
-  const y = rows.map((_, i) => (i + HORIZON < n ? (rows[i + HORIZON].Regime === 'Bear' ? 1 : 0) : null))
-  const start = SMA - 1 + HORIZON // skip SMA warm-up rows, which WS3 labels Bear by default
-  const featOK = (i: number) => X[i].every(Number.isFinite)
-  const labelled: number[] = []
-  for (let i = start; i < n; i++) if (y[i] !== null && featOK(i)) labelled.push(i)
-  const cut = labelled[Math.floor(labelled.length * TRAIN_FRAC)]
-  const tr = labelled.filter(i => i < cut), te = labelled.filter(i => i >= cut)
-  const mu = FEATURES.map((_, j) => mean(tr.map(i => X[i][j])))
-  const sd = FEATURES.map((_, j) => std(tr.map(i => X[i][j])))
-  const Z = X.map(r => r.map((v, j) => (v - mu[j]) / sd[j]))
-  const w = new Array<number>(FEATURES.length).fill(0); let b = 0
-  const lr = 0.1, lam = 0.01
-  for (let it = 0; it < 2000; it++) {
-    const g = new Array<number>(FEATURES.length).fill(0); let gb = 0
-    for (const i of tr) {
-      const e = sigmoid(Z[i].reduce((s, v, j) => s + v * w[j], b)) - (y[i] as number)
-      for (let j = 0; j < w.length; j++) g[j] += e * Z[i][j]
-      gb += e
-    }
-    for (let j = 0; j < w.length; j++) w[j] -= lr * (g[j] / tr.length + lam * w[j])
-    b -= lr * gb / tr.length
-  }
-  const prob = rows.map((_, i) => (featOK(i) && i >= SMA - 1 ? sigmoid(Z[i].reduce((s, v, j) => s + v * w[j], b)) : NaN))
-  const yTe = te.map(i => y[i] as number), pTe = te.map(i => prob[i])
-  const yTr = tr.map(i => y[i] as number), pTr = tr.map(i => prob[i])
+  // Dataiku predicts the same-day regime; its test set is a random sample of rows.
+  const prob = rows.map(r => r.pBear)
+  const y = rows.map(r => (r.Regime === 'Bear' ? 1 : 0))
+  const te = rows.map((_, i) => i).filter(i => testDates.has(rows[i].Date))
+  const tr = rows.map((_, i) => i).filter(i => !testDates.has(rows[i].Date))
+  const yTe = te.map(i => y[i]), pTe = te.map(i => prob[i])
+  const yTr = tr.map(i => y[i]), pTr = tr.map(i => prob[i])
 
   let peak = -Infinity, maxDD = 0
   for (const v of px) { peak = Math.max(peak, v); maxDD = Math.min(maxDD, v / peak - 1) }
-  return { rows, n, px, sma, pRet, drivers, prob, w, b, tr, te, yTe, pTe,
+  return { rows, n, px, sma, pRet, drivers, prob, tr, te, yTe, pTe,
     aucTest: auc(yTe, pTe), aucTrain: auc(yTr, pTr), bearRateTest: mean(yTe),
     vol20: std(pRet.slice(n - LOOKBACK)) * Math.sqrt(252), volAll: std(pRet.slice(1)) * Math.sqrt(252), maxDD }
 }
