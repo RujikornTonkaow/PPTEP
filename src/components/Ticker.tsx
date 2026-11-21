@@ -1,5 +1,5 @@
 import type { Analysis } from '../lib/analytics'
-import { C, fmt, pct, pp, thDate, tone } from '../lib/format'
+import { fmt, pct, pp, thDate, tone, useC } from '../lib/format'
 import { Spark } from './Charts'
 
 interface Item { key: string; label: string; value: string; change: string; dir: string; spark: number[]; target: string }
@@ -9,6 +9,7 @@ interface Item { key: string; label: string; value: string; change: string; dir:
  * The strip is rendered twice and slid by -50% for a seamless loop; the copy is hidden from assistive tech.
  */
 export function Ticker({ A, pBear, bear, onPick }: { A: Analysis; pBear: number; bear: boolean; onPick: (target: string) => void }) {
+  const C = useC()
   const L = A.n - 1
   const d1 = A.px[L] / A.px[L - 1] - 1
   const items: Item[] = [

@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Analysis, DriverStat } from '../lib/analytics'
-import { C, thDate } from '../lib/format'
+import { thDate, useC, type Palette } from '../lib/format'
 
 const N = 120          // trading days shown
 const W = 5.8          // ribbon length (time axis)
@@ -19,13 +19,13 @@ const NAME_TH: Record<string, string> = {
 interface Ribbon { key: string; short: string; vals: number[]; color: THREE.Color; colors?: THREE.Color[]; d?: DriverStat }
 
 /** Last N days of every series, min–max scaled to 0..1. Weakest driver at the back, PTTEP at the front. */
-function buildRibbons(A: Analysis): Ribbon[] {
+function buildRibbons(A: Analysis, C: Palette): Ribbon[] {
   const s = A.n - N
   const norm = (arr: number[]) => {
     const v = arr.slice(s), mn = Math.min(...v), mx = Math.max(...v)
     return v.map(x => (x - mn) / ((mx - mn) || 1))
   }
-  const weak = new THREE.Color('#c3d2e8'), strong = new THREE.Color(C.blue)
+  const weak = new THREE.Color(C.weak), strong = new THREE.Color(C.blue)
   const ribbons: Ribbon[] = [...A.drivers]
     .sort((a, b) => Math.abs(a.corr60) - Math.abs(b.corr60))
     .map(d => ({ key: d.key, short: d.short, d, vals: norm(A.rows.map(r => r[d.key])),
@@ -37,15 +37,15 @@ function buildRibbons(A: Analysis): Ribbon[] {
 
 const xAt = (i: number) => -W / 2 + (i / (N - 1)) * W
 
-function RibbonMesh({ r, z, active, dim, onHover, anchor }: {
-  r: Ribbon; z: number; active: boolean; dim: boolean; onHover: (k: string | null) => void; anchor: (o: THREE.Object3D | null) => void
+function RibbonMesh({ r, z, active, dim, onHover, anchor, base: baseHex }: {
+  base: string; r: Ribbon; z: number; active: boolean; dim: boolean; onHover: (k: string | null) => void; anchor: (o: THREE.Object3D | null) => void
 }) {
   const geo = useMemo(() => {
     const pos = new Float32Array(N * 6), col = new Float32Array(N * 6), idx: number[] = []
-    const white = new THREE.Color('#ffffff')
+    const fade = new THREE.Color(baseHex)
     for (let i = 0; i < N; i++) {
       const x = xAt(i), y = r.vals[i] * H, c = r.colors ? r.colors[i] : r.color
-      const base = c.clone().lerp(white, 0.85)
+      const base = c.clone().lerp(fade, 0.85)
       pos.set([x, y, 0, x, 0, 0], i * 6)
       col.set([c.r, c.g, c.b, base.r, base.g, base.b], i * 6)
       if (i < N - 1) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2) }
@@ -55,7 +55,7 @@ function RibbonMesh({ r, z, active, dim, onHover, anchor }: {
     g.setAttribute('color', new THREE.BufferAttribute(col, 3))
     g.setIndex(idx)
     return g
-  }, [r])
+  }, [r, baseHex])
   const pts = useMemo(() => r.vals.map((v, i) => [xAt(i), v * H, 0] as [number, number, number]), [r])
   const vcols = useMemo(() => r.colors?.map(c => [c.r, c.g, c.b] as [number, number, number]), [r])
   const lastCol = r.colors ? r.colors[N - 1] : r.color
@@ -83,13 +83,13 @@ function RibbonMesh({ r, z, active, dim, onHover, anchor }: {
   )
 }
 
-function Floor({ depth }: { depth: number }) {
+function Floor({ depth, C }: { depth: number; C: Palette }) {
   const ticks = [0, 30, 60, 90, N - 1]
   return (
     <group>
       <mesh rotation-x={-Math.PI / 2} position-y={-0.005}>
         <planeGeometry args={[W + 0.8, depth + 0.8]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.28} depthWrite={false} />
+        <meshBasicMaterial color={C.floor} transparent opacity={C.floorOpacity} depthWrite={false} />
       </mesh>
       {ticks.map(i => (
         <Line key={i} points={[[xAt(i), 0, -depth / 2 - 0.3], [xAt(i), 0, depth / 2 + 0.3]]}
@@ -99,7 +99,7 @@ function Floor({ depth }: { depth: number }) {
   )
 }
 
-function TodayPane({ depth, anchor }: { depth: number; anchor: (o: THREE.Object3D | null) => void }) {
+function TodayPane({ depth, anchor, C }: { depth: number; C: Palette; anchor: (o: THREE.Object3D | null) => void }) {
   const ref = useRef<THREE.Mesh>(null)
   useFrame(({ clock }) => {
     if (ref.current && !reduceMotion)
@@ -171,7 +171,8 @@ function Rig({ children, reveal }: { children: ReactNode; reveal: RefObject<THRE
 }
 
 export default function RidgeScene({ A }: { A: Analysis }) {
-  const ribbons = useMemo(() => buildRibbons(A), [A])
+  const C = useC()
+  const ribbons = useMemo(() => buildRibbons(A, C), [A, C])
   const [hover, setHover] = useState<string | null>(null)
   const [visible, setVisible] = useState(true)
   const wrap = useRef<HTMLDivElement>(null)
@@ -200,17 +201,17 @@ export default function RidgeScene({ A }: { A: Analysis }) {
           <LabelProjector anchors={anchors} els={labelEls} />
           <Rig reveal={reveal}>
             <group position-y={-0.5}>
-              <Floor depth={depth} />
+              <Floor depth={depth} C={C} />
               {/* Reveal grows the ribbons from their left (oldest) edge. */}
               <group ref={reveal} position-x={-W / 2}>
                 <group position-x={W / 2}>
                   {ribbons.map((r, i) => (
                     <RibbonMesh key={r.key} r={r} z={zOf(i)} active={hover === r.key} dim={hover !== null && hover !== r.key}
-                      onHover={setHover} anchor={o => { anchors.current[i] = o }} />
+                      onHover={setHover} base={C.ribbonBase} anchor={o => { anchors.current[i] = o }} />
                   ))}
                 </group>
               </group>
-              <TodayPane depth={depth} anchor={o => { anchors.current[ribbons.length] = o }} />
+              <TodayPane depth={depth} C={C} anchor={o => { anchors.current[ribbons.length] = o }} />
             </group>
           </Rig>
           <OrbitControls enableZoom={false} enablePan={false} target={[0, 0.35, 0]}

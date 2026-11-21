@@ -4,7 +4,8 @@ import testRaw from './data/Q2_LightGBM_test_predicted.csv?raw'
 import logo from './assets/pttep-logo.jpeg'
 import heroImg from './assets/pttep-hero.webp'
 import { analyse, DATAIKU_IMPORTANCE, evaluate, parseCSV, type Analysis } from './lib/analytics'
-import { C, fmt, pct, pp, thDate, tone } from './lib/format'
+import { fmt, pct, pp, thDate, tone, useC } from './lib/format'
+import { setTheme, useTheme } from './lib/theme'
 import { PriceChart, ProbChart, Spark } from './components/Charts'
 import { Card } from './components/Card'
 import AnalysisSection from './components/Analysis'
@@ -32,6 +33,7 @@ const DRIVER_NAME_TH: Record<string, string> = {
 const UNIT_TH: Record<string, string> = { 'USD/bbl': 'ดอลลาร์/บาร์เรล', pts: 'จุด', THB: 'บาท', '%': '%' }
 
 function Gauge({ p, x }: { p: number; x: number }) {
+  const C = useC()
   const R = 100, cx = 120, cy = 118
   const pt = (v: number, r = R) => { const a = Math.PI * (1 - v); return [cx + r * Math.cos(a), cy - r * Math.sin(a)] }
   const [nx, ny] = pt(p, R - 14)
@@ -40,18 +42,31 @@ function Gauge({ p, x }: { p: number; x: number }) {
     <svg viewBox="0 0 240 136" className="gauge" role="img" aria-label={`ความน่าจะเป็น Bear ${(p * 100).toFixed(1)}% เกณฑ์ ${x.toFixed(2)}`}>
       <defs>
         <linearGradient id="gg" x1="0" x2="1">
-          <stop offset="0" stopColor={C.green} /><stop offset="0.5" stopColor="#dbe7f7" /><stop offset="1" stopColor={C.red} />
+          <stop offset="0" stopColor={C.green} /><stop offset="0.5" stopColor={C.gaugeMid} /><stop offset="1" stopColor={C.red} />
         </linearGradient>
       </defs>
       <path d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`} fill="none" stroke="url(#gg)" strokeWidth="16" strokeLinecap="round" />
       <line x1={t0x} y1={t0y} x2={t1x} y2={t1y} stroke={C.amber} strokeWidth="3" strokeLinecap="round" />
       <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={C.ink} strokeWidth="3.5" strokeLinecap="round" className="needle" />
-      <circle cx={cx} cy={cy} r="8" fill={C.ink} /><circle cx={cx} cy={cy} r="3" fill="#fff" />
+      <circle cx={cx} cy={cy} r="8" fill={C.ink} /><circle cx={cx} cy={cy} r="3" fill={C.hub} />
     </svg>
   )
 }
 
+function ThemeToggle() {
+  const dark = useTheme() === 'dark'
+  return (
+    <button type="button" className="theme-btn" onClick={() => setTheme(dark ? 'light' : 'dark')}
+      aria-label={dark ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'} title={dark ? 'โหมดสว่าง' : 'โหมดมืด'}>
+      {dark
+        ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" /></svg>
+        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z" /></svg>}
+    </button>
+  )
+}
+
 export default function App() {
+  const C = useC()
   const [A, setA] = useState<Analysis>(EMBEDDED)
   const [source, setSource] = useState('ข้อมูล WS3 + ผล score จาก Dataiku (WS4)')
   const [error, setError] = useState('')
@@ -113,6 +128,7 @@ export default function App() {
           </nav>
           <div className="nav-tools">
             <span className="data-pill mono" title={source}>{thDate(A.rows[0].Date)} – {thDate(last.Date)}</span>
+            <ThemeToggle />
             <input ref={fileRef} type="file" accept=".csv" hidden onChange={e => onFile(e.target.files?.[0])} />
             <button className="btn" onClick={() => fileRef.current?.click()}>โหลด CSV</button>
           </div>

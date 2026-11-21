@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#e9f4ff" />
     <title>PTTEP Stock Radar</title>
+    <script>
+      // Theme before first paint (saved choice, else OS setting) so dark mode never flashes light.
+      (function () {
+        var t = null
+        try { t = localStorage.getItem('pttep-theme') } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.dataset.theme = t
+        if (t === 'dark') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#07111f')
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
