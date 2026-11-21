@@ -28,11 +28,11 @@
 ![](screen_guide_img/p5_dataiku_sessions.jpg)
 
 ### คนที่ 6 · Dataiku → RESULT → TABLE
-โชว์: คอลัมน์ R2 Score และ MAE (LightGBM 0.980 สูงสุด, Lasso 0.730 ต่ำสุด)
+โชว์: คอลัมน์ R2 Score และ MAE (LightGBM 0.981 สูงสุด, Lasso 0.730 ต่ำสุด)
 ![](screen_guide_img/p6_dataiku_table.jpg)
 
-### คนที่ 7 · Dataiku → คลิก LightGBM (s1) → Feature importance แล้วต่อด้วย What-if?
-โชว์: กราฟ Shapley (10Y 41%, Brent 25%) → What-if ที่ใส่ค่าวันที่ 6 พ.ย. ไว้แล้ว (ทาย 144) → แก้ Brent เป็น 117.64 (ได้ 150) → แก้ 10Y เป็น 2.09 (ได้ 157)
+### คนที่ 7 · Dataiku → คลิก LightGBM (s2) → Feature importance แล้วต่อด้วย What-if?
+โชว์: กราฟ Shapley (10Y 37%, Brent 25%) → What-if ที่ใส่ค่าวันที่ 6 พ.ย. ไว้แล้ว (ทาย 144) → แก้ Brent เป็น 117.64 (ได้ 147) → แก้ 10Y เป็น 2.09 (ได้ 155)
 ⚠️ ค่า What-if ไม่ถูกบันทึก **ต้องใส่ค่าวันที่ 6 พ.ย. ใหม่ก่อนพรีเซนต์**: 10Y 1.988 · Brent 98.32 · 1Y 1.04 · SP500 7376.86 · SET 1465.7 · THBUSD 0.029911 · FX 33.432 (กดปุ่มดินสอของแต่ละช่องเพื่อพิมพ์ค่า)
 ![](screen_guide_img/p7a_feature_importance.jpg)
 ![](screen_guide_img/p7b_whatif_6nov.jpg)

@@ -41,15 +41,13 @@ export const LOOKBACK = 20, WIN = 60, SMA = 50
 // Q2 LightGBM feature importance (Shapley) as shown in Dataiku: Report → Feature importance.
 export const DATAIKU_IMPORTANCE: { key: string; name: string; pct: number }[] = [
   { key: 'PTTEP_Close', name: 'ราคาปิด PTTEP', pct: 28 },
-  { key: 'Brent_Close', name: 'น้ำมันดิบ Brent', pct: 19 },
-  { key: 'Thailand_1Y_Yield_Pct', name: 'พันธบัตรไทย 1 ปี', pct: 12 },
-  { key: 'Thailand_10Y_Yield_Pct', name: 'พันธบัตรไทย 10 ปี', pct: 11 },
-  { key: 'SP500_Close', name: 'S&P 500', pct: 9 },
-  { key: 'THBUSD_Close', name: 'THB/USD', pct: 8 },
-  { key: 'SET_Index', name: 'ดัชนี SET', pct: 7 },
-  { key: 'FX_THB_per_USD', name: 'USD/THB', pct: 5 },
-  { key: 'Thailand_1Y_Yield_Pct_Imputed', name: 'ธงเติมข้อมูลพันธบัตร 1 ปี', pct: 1 },
-  { key: 'Thailand_10Y_Yield_Pct_Imputed', name: 'ธงเติมข้อมูลพันธบัตร 10 ปี', pct: 0 },
+  { key: 'Brent_Close', name: 'น้ำมันดิบ Brent', pct: 21 },
+  { key: 'SP500_Close', name: 'S&P 500', pct: 10 },
+  { key: 'Thailand_1Y_Yield_Pct', name: 'พันธบัตรไทย 1 ปี', pct: 10 },
+  { key: 'THBUSD_Close', name: 'THB/USD', pct: 9 },
+  { key: 'Thailand_10Y_Yield_Pct', name: 'พันธบัตรไทย 10 ปี', pct: 9 },
+  { key: 'SET_Index', name: 'ดัชนี SET', pct: 8 },
+  { key: 'FX_THB_per_USD', name: 'USD/THB', pct: 4 },
 ]
 
 export function parseCSV(text: string): Row[] {
